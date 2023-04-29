@@ -10,5 +10,6 @@ export type ProductType = {
     price: number,
     subCategory: string,
     orders: number,
-    photoUrl: string
+    photoUrl: string,
+    size: string,
 }

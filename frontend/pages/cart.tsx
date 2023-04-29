@@ -2,38 +2,85 @@ import { imageAssets } from "@/assets";
 import FooterComponent from "@/components/Footer";
 import { Navbar } from "flowbite-react";
 import { formatPrice } from "@/utilities/FormatFunc";
-import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { wrapper } from "../redux/store";
-import { UserSliceType } from "@/redux/userSlice";
+import React, { useEffect, useState } from "react";
+import { AppState } from "../redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { userApis } from "@/apis/userApis";
+import { refreshCart, setProductToCart } from "@/redux/cartSlice";
+import { CartProductType } from "@/types/CartProductType";
 
-type Props = {
-   user: UserSliceType;
-};
+type Props = {};
 
 const Cart = (props: Props) => {
-   console.log("User: ", props.user);
+   const [refresh, setRefresh] = useState<boolean>(false);
+
+   const user = useSelector((state: AppState) => state.user);
+   const cart = useSelector((state: AppState) => state.cart);
+   const dispatch = useDispatch();
+   const deleteProductMutation = useMutation({
+      mutationFn: userApis.deleteProductFromCart,
+      onSuccess: () => {
+         setRefresh(() => !refresh);
+      },
+   });
+   useQuery({
+      queryKey: ["cart", refresh],
+      queryFn: () => userApis.getCart(user.data?.id!),
+      onSuccess(data: CartProductType[]) {
+         dispatch(setProductToCart(data));
+      },
+      keepPreviousData: true,
+   });
+
+   const handleDeleteProduct = (data: {
+      ColorId: string;
+      ProductId: string;
+      SizeId: string;
+      UserId: string;
+   }) => {
+      if (user.data && data.UserId) {
+         deleteProductMutation.mutate({
+            id: user.data?.id!,
+            ColorId: data.ColorId,
+            ProductId: data.ProductId,
+            SizeId: data.SizeId,
+            UserId: data.UserId,
+         });
+      }
+   };
+
+   const router = useRouter();
+   useEffect(() => {
+      if (!user.data) {
+         router.push("/");
+      }
+   }, []);
+
    return (
       <div>
          {/* Header cart */}
          <Navbar fluid={true} rounded={true}>
-            <Navbar.Brand href="/" className="gap-2">
-               <img
-                  src={imageAssets.logo.src}
-                  className="mr-3 h-6 sm:h-9  bg-black rounded-full p-1"
-                  alt="Flowbite Logo"
-               />
-               <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-                  LofiShop
-               </span>
-               <span>|</span>
-               <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
-                  Giỏ hàng
-               </span>
+            <Navbar.Brand className="gap-2">
+               <Link href={"/"} className="flex items-center gap-2">
+                  <img
+                     src={imageAssets.logo.src}
+                     className="mr-3 h-6 sm:h-9  bg-black rounded-full p-1"
+                     alt="Flowbite Logo"
+                  />
+                  <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+                     LofiShop
+                  </span>
+                  <span>|</span>
+                  <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+                     Giỏ hàng
+                  </span>
+               </Link>
             </Navbar.Brand>
             <div
-               className="flex md:order-2 md:mr-[40%]"
+               className="flex md:order-2 md:mx-auto"
                style={{ flexBasis: "35%" }}
             >
                <button
@@ -105,6 +152,21 @@ const Cart = (props: Props) => {
                   </svg>
                </button>
             </div>
+            {user.data && (
+               <div
+                  className="flex md:order-2 md:ml-auto justify-end mr-6 flex items-center gap-4"
+                  style={{ flexBasis: "35%" }}
+               >
+                  <span className="text-lg font-[400]">
+                     {user.data.username}
+                  </span>
+                  <img
+                     className="w-10 h-10 object-contain rounded-full "
+                     src={user.data.avatar?.toString()}
+                     alt="user-avatar"
+                  />
+               </div>
+            )}
          </Navbar>
          {/* Content */}
          <div className="bg-slate-300 px-[10%] py-[48px]">
@@ -124,80 +186,56 @@ const Cart = (props: Props) => {
             {/* Production cards */}
             <div className="py-4">
                {/* Card */}
-               <div className="bg-white py-1 px-4 h-40 grid grid-cols-2 items-center text-center">
-                  <div className="flex items-center gap-4 ">
-                     <input type={"checkbox"} />
-                     <img
-                        src={imageAssets.productReview1.src}
-                        className="h-28 w-28"
-                        alt="product-img"
-                     />
-                     <span>Áo Polo Local Brand Shirt</span>
-                     <div className="opacity-70">Size L, M(53- 52kg)</div>
-                  </div>
-                  <ul className="grid items-center grid-cols-4 ">
-                     <li>{formatPrice(199400)}</li>
-                     <li className="flex items-center h-7 justify-start text-[10px]">
-                        <button type="button">
-                           <FontAwesomeIcon
-                              className="px-4 py-[8px] mt-[3px] border"
-                              icon={faMinus}
-                           />
-                        </button>
-                        <input
-                           className="w-14 h-full text-center"
-                           type={"number"}
+               {cart.products.map((product, key) => (
+                  <div
+                     key={key}
+                     className="bg-white  px-4 h-28 grid grid-cols-2 items-center text-center"
+                  >
+                     <div className="flex items-center gap-4 ">
+                        <input type={"checkbox"} />
+                        <img
+                           src={product.PhotoUrl}
+                           className="h-20 w-20"
+                           alt="product-img"
                         />
-                        <button type="button">
-                           <FontAwesomeIcon
-                              className="px-4 py-[8px] mt-[3px] border"
-                              icon={faPlus}
+                        <span>{product.Name}</span>
+                        <div className="opacity-70">
+                           Size {product.Size}, Màu {product.Color}
+                        </div>
+                     </div>
+                     <ul className="grid items-center grid-cols-4 ">
+                        <li>{formatPrice(product.Price)}</li>
+                        <li className="flex items-center h-7 justify-center text-[10px]">
+                           <input
+                              className="w-20 h-full text-center"
+                              min={1}
+                              disabled
+                              defaultValue={product.Quantity}
+                              type={"number"}
                            />
-                        </button>
-                     </li>
-                     <li className="text-blue-600">{formatPrice(214000)}</li>
-                     <li>
-                        <button className="text-red-600 font-[400]">Xóa</button>
-                     </li>
-                  </ul>
-               </div>
-               <div className="bg-white py-1 px-4 h-40 grid grid-cols-2 items-center text-center">
-                  <div className="flex items-center gap-4 ">
-                     <input type={"checkbox"} />
-                     <img
-                        src={imageAssets.productReview1.src}
-                        className="h-28 w-28"
-                        alt="product-img"
-                     />
-                     <span>Áo Polo Local Brand Shirt</span>
-                     <div className="opacity-70">Size L, M(53- 52kg)</div>
+                        </li>
+                        <li className="text-blue-600">
+                           {formatPrice(product.Price * product.Quantity)}
+                        </li>
+                        <li>
+                           <button
+                              type="button"
+                              onClick={() =>
+                                 handleDeleteProduct({
+                                    ColorId: product.ColorId,
+                                    ProductId: product.ProductId,
+                                    SizeId: product.Size,
+                                    UserId: user.data?.id!,
+                                 })
+                              }
+                              className="text-red-600 font-[400]"
+                           >
+                              Xóa
+                           </button>
+                        </li>
+                     </ul>
                   </div>
-                  <ul className="grid items-center grid-cols-4 ">
-                     <li>{formatPrice(199400)}</li>
-                     <li className="flex items-center h-7 justify-start text-[10px]">
-                        <button type="button">
-                           <FontAwesomeIcon
-                              className="px-4 py-[8px] mt-[3px] border"
-                              icon={faMinus}
-                           />
-                        </button>
-                        <input
-                           className="w-14 h-full text-center"
-                           type={"number"}
-                        />
-                        <button type="button">
-                           <FontAwesomeIcon
-                              className="px-4 py-[8px] mt-[3px] border"
-                              icon={faPlus}
-                           />
-                        </button>
-                     </li>
-                     <li className="text-blue-600">{formatPrice(214000)}</li>
-                     <li>
-                        <button className="text-red-600 font-[400]">Xóa</button>
-                     </li>
-                  </ul>
-               </div>
+               ))}
             </div>
             {/* Summary box */}
             <div className="bg-white py-1 px-4 flex flex-col items-end justify-center">
@@ -208,9 +246,13 @@ const Cart = (props: Props) => {
                   </button>
                </div>
                <div className="flex items-center gap-52 py-4">
-                  <span>Tổng thanh toán (2 Sản Phẩm)</span>
+                  <span>Tổng thanh toán ({cart.products.length} Sản Phẩm)</span>
                   <span className="text-blue-600 text-xl font-bold">
-                     {formatPrice(500000)}
+                     {formatPrice(
+                        cart.products.reduce((prev, curr) => {
+                           return prev + curr.Price * curr.Quantity;
+                        }, 0)
+                     )}
                   </span>
                </div>
                <div className="flex items-center gap-52 py-4">
@@ -227,15 +269,3 @@ const Cart = (props: Props) => {
 };
 
 export default Cart;
-
-export const getServerSideProps = wrapper.getServerSideProps(
-   (store) => async () => {
-      const user = store.getState().user;
-
-      return {
-         props: {
-            user,
-         },
-      };
-   }
-);

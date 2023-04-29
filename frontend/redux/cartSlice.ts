@@ -1,31 +1,31 @@
-import { ProductType } from "@/types/ProductType";
+import { CartProductType } from "@/types/CartProductType";
 import { createSlice } from "@reduxjs/toolkit";
 
-type CartSliceType = {
-    products: ProductType[]
+export type CartSliceType = {
+    products: CartProductType[],
+    refresh: boolean
 }
 
 
 const initialStateValue : CartSliceType = {
-    products: []
+    products: [],
+    refresh: false
 }
 
 const cartSlice = createSlice({
     initialState: initialStateValue,
     name: "cart",
     reducers: {
-        addProductToCart(state, action) {
-            state.products = [...state.products, action.payload]
+        setProductToCart(state, action) {
+            state.products = [...action.payload]
         },
-        removeProductFromCart(state, action) {
-            state.products = state.products.filter((product : ProductType) => {
-                return product.id !== action.payload
-            })
-        },
+        refreshCart(state) {
+            state.refresh = !state.refresh
+        }
     }
 })
 
 const { actions } = cartSlice
 
-export const { addProductToCart, removeProductFromCart } = actions
+export const { setProductToCart, refreshCart } = actions
 export default cartSlice.reducer

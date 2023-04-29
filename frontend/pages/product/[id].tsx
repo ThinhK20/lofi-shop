@@ -17,10 +17,14 @@ import { ProductPhotoType } from "@/types/ProductPhotoType";
 import { ProductSizeType } from "@/types/ProductSizeType";
 import { ProductColorType } from "@/types/ProductColorType";
 import ConfirmLoginModal from "@/components/ConfirmLoginModal";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { UserSliceType } from "@/redux/userSlice";
-import { useRouter } from "next/router";
 import { AppState } from "@/redux/store";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { userApis } from "@/apis/userApis";
+import { refreshCart, setProductToCart } from "@/redux/cartSlice";
+import { toast } from "react-toastify";
+import { CartProductType } from "@/types/CartProductType";
 interface Props extends ProductType {
    photos: ProductPhotoType[];
    sizes: ProductSizeType[];
@@ -45,7 +49,38 @@ const initialFormState: FormState = {
 };
 
 const ProductPage = (props: Props) => {
-   const router = useRouter();
+   const dispatch = useDispatch();
+   const [refresh, setRefresh] = useState<boolean>(false);
+
+   useQuery({
+      queryKey: ["cart", refresh],
+      queryFn: () => userApis.getCart(user.data?.id!),
+      onSuccess(data: CartProductType[]) {
+         dispatch(setProductToCart(data));
+      },
+      keepPreviousData: true,
+   });
+
+   const addToCartMutation = useMutation({
+      mutationFn: userApis.addProductIntoCart,
+      onSuccess: () => {
+         dispatch(refreshCart());
+         toast("Thêm vào giỏ hàng thành công", {
+            theme: "dark",
+            type: "success",
+            autoClose: 1000,
+         });
+         setRefresh(() => !refresh);
+      },
+      onError: () => {
+         toast("Có lỗi xảy ra !", {
+            theme: "dark",
+            type: "error",
+            autoClose: 1000,
+         });
+      },
+   });
+
    const user = useSelector<AppState>((state) => state.user) as UserSliceType;
    const [ratingStart] = useState(
       Array(Math.floor(props.rating)).fill("start")
@@ -54,25 +89,41 @@ const ProductPage = (props: Props) => {
 
    const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
-   const handleSubmit = () => {};
+   const handleAddToCart = (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!user.data) {
+         setShowLoginModal(true);
+      } else {
+         if (!formState.size || !formState.color || formState.quantity === 0) {
+            toast("Vui lòng chọn đầy đủ thông tin.", {
+               theme: "dark",
+               type: "error",
+               autoClose: 1000,
+            });
+            return;
+         }
+
+         addToCartMutation.mutate({
+            id: user.data.id!,
+            ProductId: props.id,
+            UserId: user.data.id!,
+            SizeId: formState.size,
+            ColorId: formState.color,
+            Quantity: formState.quantity,
+         });
+      }
+   };
 
    const handleChange = (name: string, value: string | number) => {
       setFormState((prev) => ({ ...prev, [name]: value }));
    };
 
-   const handleAddIntoCart = (
-      e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-   ) => {
-      if (!user.data) {
-         setShowLoginModal(true);
-      } else {
-         router.push("/cart");
-      }
-   };
-
    return (
       <DefaultLayout>
-         <div className="bg-slate-300 px-[10%] py-[48px]">
+         <form
+            onSubmit={handleAddToCart}
+            className="bg-slate-300 px-[10%] py-[48px]"
+         >
             {/* Review product */}
             <div className="flex align-middle border-none gap-8 bg-white p-4 pb-8">
                <div style={{ flexBasis: "40%" }}>
@@ -219,8 +270,7 @@ const ProductPage = (props: Props) => {
                   </div>
                   <div className="flex content-center gap-4 mt-10">
                      <button
-                        onClick={handleAddIntoCart}
-                        type="button"
+                        type="submit"
                         className="px-8 py-2 text-lg bg-blue-200 border border-blue-600 text-blue-600 hover:opacity-80"
                      >
                         <FontAwesomeIcon
@@ -292,7 +342,7 @@ const ProductPage = (props: Props) => {
             </div>
             {/* Comment section */}
             <CommentSection product={props} />
-         </div>
+         </form>
          {showLoginModal && <ConfirmLoginModal onShow={setShowLoginModal} />}
       </DefaultLayout>
    );

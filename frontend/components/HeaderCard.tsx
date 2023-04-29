@@ -1,22 +1,27 @@
-import { imageAssets } from "@/assets";
 import { formatPrice } from "@/utilities/FormatFunc";
 import TextOverflow from "@/styles/TextOverflow";
 import React from "react";
+import { CartProductType } from "@/types/CartProductType";
 
-type Props = {};
+type Props = {
+   product: CartProductType;
+};
 
 const HeaderCard = (props: Props) => {
    return (
       <div className="flex items-center">
          <img
-            src={imageAssets.productReview1.src}
+            src={props.product.PhotoUrl}
             alt="header-img-card"
             className="w-10 h-10 mr-4"
          />
-         <TextOverflow className="pr-10 max-w-xs">
-            Áo Polo Local Brand Karants Signature
+         <TextOverflow className="pr-5 max-w-xs">
+            {props.product.Name} x {props.product.Quantity}
          </TextOverflow>
-         <span className="text-blue-600 ">{formatPrice(51024)}</span>
+         <span className="pr-5 text-gray-600 ">{props.product.Color}</span>
+         <span className="text-blue-600 ">
+            {formatPrice(props.product.Price)}
+         </span>
       </div>
    );
 };

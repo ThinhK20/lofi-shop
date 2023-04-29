@@ -10,6 +10,11 @@ import { setLogout } from "@/redux/userSlice";
 import { useRouter } from "next/router";
 import { RouterNodeType } from "@/types/RouterNodeType";
 import { AppState } from "@/redux/store";
+import { useQuery } from "@tanstack/react-query";
+import { userApis } from "@/apis/userApis";
+import { ProductType } from "@/types/ProductType";
+import { setProductToCart } from "@/redux/cartSlice";
+import { CartProductType } from "@/types/CartProductType";
 
 const LinkItem = (props: RouterNodeType) => {
    const active = props.path === props.href;
@@ -29,7 +34,17 @@ const LinkItem = (props: RouterNodeType) => {
 const Header = () => {
    const { asPath } = useRouter();
    const user = useSelector((state: AppState) => state.user.data);
+   const cart = useSelector((state: AppState) => state.cart);
    const dispatch = useDispatch();
+
+   useQuery({
+      queryKey: ["cart"],
+      queryFn: () => userApis.getCart(user?.id!),
+      onSuccess(data: CartProductType[]) {
+         dispatch(setProductToCart(data));
+      },
+      keepPreviousData: true,
+   });
 
    const handleLogout = () => {
       if (!user) return;
@@ -70,22 +85,21 @@ const Header = () => {
                   >
                      <Dropdown.Header>
                         <span className="block truncate text-sm font-medium">
-                           Cart
+                           Giỏ hàng
                         </span>
                      </Dropdown.Header>
-                     <Dropdown.Item>
-                        <HeaderCard />
-                     </Dropdown.Item>
-                     <Dropdown.Item>
-                        <HeaderCard />
-                     </Dropdown.Item>
-                     <Dropdown.Item>
-                        <HeaderCard />
-                     </Dropdown.Item>
+                     {cart.products.map((product, key) => (
+                        <Dropdown.Item key={key}>
+                           <HeaderCard product={product} />
+                        </Dropdown.Item>
+                     ))}
+
                      <Dropdown.Divider />
                      <Dropdown.Item>
                         <div className="flex items-center justify-between w-full">
-                           <span>Thêm 3 sản phẩm vào giỏ</span>
+                           <span className="mr-2">
+                              Thêm {cart.products.length} sản phẩm vào giỏ
+                           </span>
                            <Link
                               href={"/cart"}
                               className="btn px-8 py-2 hover:opacity-80 bg-blue-600 text-white "
