@@ -13,5 +13,6 @@ export type CartProductType = {
     Size: string;
     PhotoUrl: string;
     ColorId: string;
+    StripeId: string;
  };
  

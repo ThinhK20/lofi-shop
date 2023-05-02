@@ -9,13 +9,28 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { userApis } from "@/apis/userApis";
-import { refreshCart, setProductToCart } from "@/redux/cartSlice";
+import { setProductToCart } from "@/redux/cartSlice";
 import { CartProductType } from "@/types/CartProductType";
+import { toast } from "react-toastify";
 
 type Props = {};
 
 const Cart = (props: Props) => {
    const [refresh, setRefresh] = useState<boolean>(false);
+   const router = useRouter();
+
+   const createRequestCheckoutMutation = useMutation({
+      mutationFn: userApis.createRequestCheckout,
+      onSuccess(res) {
+         router.push(res.data);
+      },
+      onError(error) {
+         toast("Error: " + error, {
+            theme: "dark",
+            type: "error",
+         });
+      },
+   });
 
    const user = useSelector((state: AppState) => state.user);
    const cart = useSelector((state: AppState) => state.cart);
@@ -52,15 +67,26 @@ const Cart = (props: Props) => {
       }
    };
 
-   const router = useRouter();
    useEffect(() => {
       if (!user.data) {
          router.push("/");
       }
    }, []);
 
+   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const listItems = cart.products.map((product) => {
+         return {
+            quantity: product.Quantity,
+            priceId: product.StripeId,
+         };
+      });
+
+      createRequestCheckoutMutation.mutate(listItems);
+   };
+
    return (
-      <div>
+      <form onSubmit={handleSubmit}>
          {/* Header cart */}
          <Navbar fluid={true} rounded={true}>
             <Navbar.Brand className="gap-2">
@@ -256,7 +282,10 @@ const Cart = (props: Props) => {
                   </span>
                </div>
                <div className="flex items-center gap-52 py-4">
-                  <button className="btn py-2 px-40 hover:opacity-80 bg-blue-600 text-white">
+                  <button
+                     type="submit"
+                     className="btn py-2 px-40 hover:opacity-80 bg-blue-600 text-white"
+                  >
                      Mua hàng
                   </button>
                </div>
@@ -264,7 +293,7 @@ const Cart = (props: Props) => {
          </div>
          {/* Footer */}
          <FooterComponent />
-      </div>
+      </form>
    );
 };
 

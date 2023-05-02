@@ -1,9 +1,11 @@
 import { CartProductType } from "@/types/CartProductType";
+import { RequestCheckoutType } from "@/types/RequestCheckout";
 import axios from "axios";
 
 const getCart = process.env.NEXT_PUBLIC_API + "/api/users/cart/"; 
 const addProductIntoCart = process.env.NEXT_PUBLIC_API + "/api/users/cart/"; 
 const deleteProductFromCart = process.env.NEXT_PUBLIC_API + "/api/users/cart/"; 
+const createRequestCheckout = process.env.NEXT_PUBLIC_API + "/api/Stripe/create-checkout-session/"; 
 
 export const userApis = {
     getCart: async(id: string) => {
@@ -38,5 +40,8 @@ export const userApis = {
                 "Content-Type": "multipart/form-data"
             }
         })
+    },
+    createRequestCheckout: async(data : RequestCheckoutType[]) => {
+        return await axios.post(createRequestCheckout, data)
     }
 } 
