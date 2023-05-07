@@ -1,18 +1,25 @@
 import { userApis } from "@/apis/userApis";
 import { imageAssets } from "@/assets";
 import DefaultLayout from "@/layouts/DefaultLayout";
+import { AppState, AppStore } from "@/redux/store";
 import { InvoiceType } from "@/types/InvoiceType";
 import { ParamsType } from "@/types/ParamsType";
 import { formatPrice } from "@/utilities/FormatFunc";
 import Image from "next/image";
-import React from "react";
+import { useRouter } from "next/router";
+import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 
 type Props = {
    invoice: InvoiceType;
 };
 
 const Order = (props: Props) => {
-   console.log("Props: ", props.invoice);
+   const user = useSelector((state: AppState) => state.user).data;
+   const router = useRouter();
+   useEffect(() => {
+      if (!user) router.push("/");
+   }, [user, router]);
 
    return (
       <DefaultLayout>
@@ -49,13 +56,11 @@ const Order = (props: Props) => {
             <div className="flex justify-between mb-8 px-3">
                <div>
                   <h2 className="font-bold">Bill To: </h2>
-                  Thịnh Nguyễn
+                  {user?.username}
                   <br />
-                  +84 783877917
+                  {user?.phone}
                   <br />
-                  Bend, OR 97703 USA
-                  <br />
-                  hello@pixelandtonic.com
+                  {user?.email}
                   <br />
                </div>
                <div className="text-right">

@@ -12,7 +12,6 @@ import { RouterNodeType } from "@/types/RouterNodeType";
 import { AppState } from "@/redux/store";
 import { useQuery } from "@tanstack/react-query";
 import { userApis } from "@/apis/userApis";
-import { ProductType } from "@/types/ProductType";
 import { setProductToCart } from "@/redux/cartSlice";
 import { CartProductType } from "@/types/CartProductType";
 
@@ -33,7 +32,7 @@ const LinkItem = (props: RouterNodeType) => {
 
 const Header = () => {
    const { asPath } = useRouter();
-   const user = useSelector((state: AppState) => state.user.data);
+   const user = useSelector((state: AppState) => state.user?.data);
    const cart = useSelector((state: AppState) => state.cart);
    const dispatch = useDispatch();
 

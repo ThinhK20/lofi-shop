@@ -9,7 +9,8 @@ import type { AppProps } from "next/app";
 import { Provider } from "react-redux";
 import axios from "axios";
 import https from "https";
-import { wrapper } from "../redux/store";
+import { persistor, wrapper } from "../redux/store";
+import { PersistGate } from "redux-persist/integration/react";
 
 const queryClient = new QueryClient();
 
@@ -21,10 +22,12 @@ function App({ Component, ...rest }: AppProps) {
    const { store, props } = wrapper.useWrappedStore(rest);
    return (
       <Provider store={store}>
-         <QueryClientProvider client={queryClient}>
-            <Component {...props.pageProps} />
-            <ToastContainer />
-         </QueryClientProvider>
+         <PersistGate loading={null} persistor={persistor}>
+            <QueryClientProvider client={queryClient}>
+               <Component {...props.pageProps} />
+               <ToastContainer />
+            </QueryClientProvider>
+         </PersistGate>
       </Provider>
    );
 }
