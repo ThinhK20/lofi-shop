@@ -4,5 +4,6 @@
 	{
 		public int Quantity { get; set; }
 		public string PriceId { get; set; }
+		public Guid UserId { get; set; }
 	}
 }

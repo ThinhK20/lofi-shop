@@ -72,9 +72,10 @@ namespace Lofi_Shop_API.Services
 		}
 
 
-		public async Task<string> CreateCheckoutSession([FromBody] List<CreateCheckoutSessionStripeRequest> request)
+
+		public string CreateCheckoutSession([FromBody] List<CreateCheckoutSessionStripeRequest> request)
 		{
-			var domain = "http://localhost:3000";
+			var domain = "http://localhost:3000/";
 
 			var lineItems = new List<SessionLineItemOptions>();
 
@@ -93,7 +94,7 @@ namespace Lofi_Shop_API.Services
 			{
 				LineItems = lineItems,
 				Mode = "payment",
-				SuccessUrl = domain + "/order",
+				SuccessUrl = domain + "invoice/" + request.FirstOrDefault().UserId,
 				CancelUrl = domain + "/cart",
 			};
 			var service = new SessionService();

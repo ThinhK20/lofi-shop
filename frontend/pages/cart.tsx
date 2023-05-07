@@ -79,6 +79,7 @@ const Cart = (props: Props) => {
          return {
             quantity: product.Quantity,
             priceId: product.StripeId,
+            userId: user.data?.id,
          };
       });
 

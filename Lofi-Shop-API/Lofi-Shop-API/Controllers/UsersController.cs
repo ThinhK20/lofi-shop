@@ -3,6 +3,7 @@ using Dapper;
 using Lofi_Shop_API.Models;
 using Lofi_Shop_API.Models.DTO;
 using Lofi_Shop_API.Models.DTO.Users;
+using Lofi_Shop_API.Models.Order;
 using Lofi_Shop_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -132,7 +133,8 @@ namespace Lofi_Shop_API.Controllers
 		}
 
 
-		[HttpPost("checkout_order")]
+		[HttpGet("checkout_order")]
+
 		[AllowAnonymous]
 		public async Task<IActionResult> AddOrder(InvoiceUser invoiceUser)
 		{
@@ -161,6 +163,85 @@ namespace Lofi_Shop_API.Controllers
 				});
 
 				return Ok(order);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
+
+		[HttpPost("checkout_cart/{id:Guid}")]
+		public async Task<IActionResult> CheckoutCart([FromRoute] Guid id, [FromQuery] bool success)
+		{
+			try
+			{
+				await using SqlConnection sqlConnection = _connectionFactory.CreateConnection();
+				var cart = await sqlConnection.QueryAsync<CartInfoDTO>("Select * from Cart cart join Product product on product.Id = cart.ProductId where cart.UserId = @id", new
+				{
+					id = id
+				});
+				if (cart == null) return BadRequest("Cart is empty.");
+
+
+				List<OrdersDetailsDTO> details = new List<OrdersDetailsDTO>();
+
+
+				double totalPrice = 0;
+				foreach (var item in cart)
+				{
+					OrdersDetailsDTO temp = new OrdersDetailsDTO
+					{
+						ProductId = item.ProductId,
+						Quantity = item.Quantity,
+						Price = item.Price
+					};
+					totalPrice += item.Price * item.Quantity;
+					details.Add(temp);
+				}
+
+				if (success == false) return NoContent();
+				InvoiceUser invoiceUser = new InvoiceUser
+				{
+					ordersCreatedDTO = new OrdersCreatedDTO
+					{
+						PaymentType = "Card",
+						TotalPrice = totalPrice,
+						UserId = id
+					},
+					listDetails = details
+				};
+				Guid orderId = Guid.NewGuid();
+				Orders order = _mapper.Map<Orders>(invoiceUser.ordersCreatedDTO);
+				order.Id = orderId;
+				string query = "Insert into Orders values (@Id, @UserId, @TotalPrice, @PaymentType, @CreatedDate)";
+				string detailQuery = "Insert into OrdersDetails values(@OrderId, @ProductId, @Price, @Quantity)";
+
+
+
+				await sqlConnection.ExecuteAsync(query, order);
+
+
+				List<OrdersDetails> rowDetails = new List<OrdersDetails>();
+				invoiceUser.listDetails.ForEach((orderDetail) =>
+				{
+					OrdersDetails rowDetail = _mapper.Map<OrdersDetails>(orderDetail);
+					rowDetail.OrderID = orderId;
+					rowDetails.Add(rowDetail);
+				});
+				await sqlConnection.ExecuteAsync(detailQuery, rowDetails);
+
+				await sqlConnection.ExecuteAsync("delete cart where UserId=@UserId", new
+				{
+					UserId = id
+				});
+
+
+				return Ok(new
+				{
+					order,
+					cart,
+				});
 			}
 			catch (Exception ex)
 			{

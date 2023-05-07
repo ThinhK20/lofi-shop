@@ -7,6 +7,6 @@ namespace Lofi_Shop_API.Services
 	{
 		Task<StripeCustomer> AddStripeCustomerAsync(AddStripeCustomer customer, CancellationToken ct);
 		Task<StripePayment> AddStripePaymentAsync(AddStripePayment payment, CancellationToken ct);
-		Task<string> CreateCheckoutSession([FromBody] List<CreateCheckoutSessionStripeRequest> request);
+		string CreateCheckoutSession([FromBody] List<CreateCheckoutSessionStripeRequest> request);
 	}
 }

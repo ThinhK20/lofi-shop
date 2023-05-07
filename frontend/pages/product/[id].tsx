@@ -25,6 +25,7 @@ import { userApis } from "@/apis/userApis";
 import { refreshCart, setProductToCart } from "@/redux/cartSlice";
 import { toast } from "react-toastify";
 import { CartProductType } from "@/types/CartProductType";
+import { ParamsType } from "@/types/ParamsType";
 interface Props extends ProductType {
    photos: ProductPhotoType[];
    sizes: ProductSizeType[];
@@ -363,10 +364,6 @@ export async function getStaticPaths() {
       fallback: false,
    };
 }
-
-type ParamsType = {
-   id: string;
-};
 
 export async function getStaticProps({ params }: { params: ParamsType }) {
    const productInfo = await productApis.getProductInfo(params.id);

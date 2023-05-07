@@ -17,13 +17,16 @@ axios.defaults.httpsAgent = new https.Agent({
    rejectUnauthorized: false,
 });
 
-function App({ Component, pageProps }: AppProps) {
+function App({ Component, ...rest }: AppProps) {
+   const { store, props } = wrapper.useWrappedStore(rest);
    return (
-      <QueryClientProvider client={queryClient}>
-         <Component {...pageProps} />
-         <ToastContainer />
-      </QueryClientProvider>
+      <Provider store={store}>
+         <QueryClientProvider client={queryClient}>
+            <Component {...props.pageProps} />
+            <ToastContainer />
+         </QueryClientProvider>
+      </Provider>
    );
 }
 
-export default wrapper.withRedux(App);
+export default App;

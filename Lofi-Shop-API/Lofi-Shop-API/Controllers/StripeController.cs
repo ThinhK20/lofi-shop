@@ -46,8 +46,10 @@ namespace Lofi_Shop_API.Controllers
 		[HttpPost("create-checkout-session")]
 		public async Task<IActionResult> CreateCheckoutSession([FromBody] List<CreateCheckoutSessionStripeRequest> request)
 		{
-			string Url = await _stripeService.CreateCheckoutSession(request);
+			string Url = _stripeService.CreateCheckoutSession(request);
 			return Ok(Url);
 		}
+
+
 	}
 }
